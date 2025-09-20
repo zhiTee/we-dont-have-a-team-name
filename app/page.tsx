@@ -1,3 +1,4 @@
+import Chat from "@/components/chat"
 'use client'
 
 import { useState } from "react";
@@ -8,8 +9,6 @@ export default function Chat() {
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-
   async function handleSend() {
     setLoading(true);
     setLoading(false);
@@ -17,11 +16,9 @@ export default function Chat() {
 
   return (
     <div>
-      <h1>Hello world</h1>
-
-      <button onClick={() => router.push('/ai_sample_1')}>
-      Go to AI Sample 1
-    </button>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <Chat />
+      </main>
     </div>
   );
 }
