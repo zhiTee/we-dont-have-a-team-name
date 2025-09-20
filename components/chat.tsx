@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Send, Loader2 } from "lucide-react"
+import { Send, Loader2, Mic, Camera } from "lucide-react"
 
 type Message = {
   id: number
@@ -20,6 +20,13 @@ export default function Chat() {
   const [input, setInput] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const scrollRef = React.useRef<HTMLDivElement>(null)
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const handlePickMedia =() => fileInputRef.current?.click()
+  const handleRecordVoice = () => {
+  // TODO: wire up MediaRecorder here
+  console.log("Start/stop recording…")
+  }
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -99,17 +106,50 @@ export default function Chat() {
       </CardContent>
 
       <div className="border-t p-3 flex items-center gap-2">
-        <Input
-          type="text"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+        <Button
+          type="button"
+          //variant="ghost"
+          size="icon"
+          aria-label="Attach photo or video"
+          onClick={handlePickMedia}
           disabled={loading}
-        />
+          className="bg-muted text-muted-foreground hover:bg-muted/80"
+        >
+          <Camera className="h-5 w-5" />
+        </Button>
+
+        <div className = "relative flex-1">
+          <Input
+            type="text"
+            placeholder="Type a message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            disabled={loading}
+            className="pr-12"
+          />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Record voice message"
+            onClick={handleRecordVoice}
+            disabled={loading}
+            className="absolute right-1 top-1/2 -translate-y-1/2
+                 h-8 w-8"
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+        </div>
+
         <Button size="icon" onClick={handleSend}>
           <Send className="h-4 w-4" />
         </Button>
+
+        
+        
+
       </div>
     </Card>
   )
