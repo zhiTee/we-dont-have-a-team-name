@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.716.0",
     "@aws-sdk/client-bedrock-runtime": "^3.716.0",
+    "@aws-sdk/client-textract": "^3.716.0",
     "@radix-ui/react-slot": "^1.2.3",
     "aws-sdk": "^2.1692.0",
     "class-variance-authority": "^0.7.1",

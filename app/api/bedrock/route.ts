@@ -1,10 +1,69 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { BedrockAgentRuntimeClient, RetrieveAndGenerateCommand } from "@aws-sdk/client-bedrock-agent-runtime";
+import { TextractClient, AnalyzeDocumentCommand } from "@aws-sdk/client-textract";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { message, s3Bucket, s3Key } = await request.json();
+
+    // If S3 document provided, use Textract first
+    if (s3Bucket && s3Key) {
+      const textractClient = new TextractClient({
+        region: process.env.AWS_REGION || "us-east-1",
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        },
+      });
+
+      const textractCommand = new AnalyzeDocumentCommand({
+        Document: {
+          S3Object: {
+            Bucket: s3Bucket,
+            Name: s3Key,
+          },
+        },
+        FeatureTypes: ["TABLES", "FORMS"],
+      });
+
+      const textractResponse = await textractClient.send(textractCommand);
+      const extractedText = textractResponse.Blocks?.filter(block => block.BlockType === "LINE")
+        .map(block => block.Text).join("\n") || "";
+
+      // Use extracted text with Mistral
+      const client = new BedrockRuntimeClient({
+        region: process.env.AWS_REGION || "us-east-1",
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        },
+      });
+
+      const payload = {
+        messages: [{
+          role: "user",
+          content: `Based on this document content: ${extractedText}\n\nQuestion: ${message}`
+        }],
+        max_tokens: 1000,
+        temperature: 0.7
+      };
+
+      const command = new InvokeModelCommand({
+        modelId: "amazon.nova-pro-v1:0",
+        contentType: "application/json",
+        body: JSON.stringify(payload),
+      });
+
+      const response = await client.send(command);
+      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+
+      return NextResponse.json({ 
+        response: responseBody.output.message.content[0].text,
+        mode: "textract-analysis",
+        extractedText: extractedText.substring(0, 500) + "..."
+      });
+    }
 
     // Try Knowledge Base first
     try {
@@ -24,7 +83,7 @@ export async function POST(request: NextRequest) {
           type: "KNOWLEDGE_BASE",
           knowledgeBaseConfiguration: {
             knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID!,
-            modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/mistral.mistral-7b-instruct-v0:2`,
+            modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/amazon.nova-pro-v1:0`,
             orchestrationConfiguration: {
               promptTemplate: {
                 textPromptTemplate: "You are a helpful assistant. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:"
@@ -32,7 +91,7 @@ export async function POST(request: NextRequest) {
             },
             generationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "<s>[INST] Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$ [/INST]"
+                textPromptTemplate: "You are an expert at analyzing documents including tabular, structured and descriptive data. Based on the following context, answer the question. If the context contains tabular or descriptive data, state or describe them in your response without showing the structure.\n\nContext: $search_results$\n\nQuestion: $query$"
               }
             }
           },
@@ -66,13 +125,16 @@ export async function POST(request: NextRequest) {
     });
 
     const payload = {
-      prompt: `<s>[INST] ${message} [/INST]`,
+      messages: [{
+        role: "user",
+        content: message
+      }],
       max_tokens: 1000,
       temperature: 0.7
     };
 
     const command = new InvokeModelCommand({
-      modelId: "mistral.mistral-7b-instruct-v0:2",
+      modelId: "amazon.nova-pro-v1:0",
       contentType: "application/json",
       body: JSON.stringify(payload),
     });
@@ -81,7 +143,7 @@ export async function POST(request: NextRequest) {
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
     return NextResponse.json({ 
-      response: responseBody.outputs[0].text,
+      response: responseBody.output.message.content[0].text,
       mode: "regular-chat"
     });
   } catch (error) {
