@@ -2,6 +2,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 import { BedrockAgentRuntimeClient, RetrieveAndGenerateCommand } from "@aws-sdk/client-bedrock-agent-runtime";
 import { TextractClient, AnalyzeDocumentCommand } from "@aws-sdk/client-textract";
 import { NextRequest, NextResponse } from "next/server";
+import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,8 +59,10 @@ export async function POST(request: NextRequest) {
       const response = await client.send(command);
       const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
+      const aiResponse = responseBody.output.message.content[0].text;
       return NextResponse.json({ 
-        response: responseBody.output.message.content[0].text,
+        response: aiResponse,
+        htmlResponse: parseAIResponseToHTML(aiResponse),
         mode: "textract-analysis",
         extractedText: extractedText.substring(0, 500) + "..."
       });
@@ -104,6 +107,7 @@ export async function POST(request: NextRequest) {
       if (kbResponse.output?.text && kbResponse.citations && kbResponse.citations.length > 0) {
         return NextResponse.json({ 
           response: kbResponse.output.text,
+          htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
           sources: kbResponse.citations.map((citation: any) => ({
             content: citation.generatedResponsePart?.textResponsePart?.text,
             source: citation.retrievedReferences?.[0]?.location?.s3Location?.uri
@@ -142,8 +146,10 @@ export async function POST(request: NextRequest) {
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
+    const aiResponse = responseBody.output.message.content[0].text;
     return NextResponse.json({ 
-      response: responseBody.output.message.content[0].text,
+      response: aiResponse,
+      htmlResponse: parseAIResponseToHTML(aiResponse),
       mode: "regular-chat"
     });
   } catch (error) {

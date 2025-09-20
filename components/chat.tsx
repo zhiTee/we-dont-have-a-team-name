@@ -60,7 +60,7 @@ export default function Chat() {
         const aiMessage: Message = {
           id: Date.now() + 1,
           role: "assistant",
-          content: res.ok ? data.response : "Error: " + data.error,
+          content: res.ok ? (data.htmlResponse || data.response) : "Error: " + data.error,
         }
 
         setMessages((prev) => [...prev, aiMessage])
@@ -94,7 +94,10 @@ export default function Chat() {
                 : "bg-muted"
             )}
           >
-            {msg.content}
+            <div 
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: msg.content }} 
+            />
           </div>
         ))}
 
