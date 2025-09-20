@@ -1,10 +1,24 @@
 import Chat from "@/components/chat"
+'use client'
 
-export default function Page() {
+import { useState } from "react";
+import { useRouter } from 'next/navigation';
+
+export default function Chat() {
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSend() {
+    setLoading(true);
+    setLoading(false);
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
-      <Chat />
-    </main>
-  )
+    <div>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <Chat />
+      </main>
+    </div>
+  );
 }
-

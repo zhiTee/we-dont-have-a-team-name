@@ -11,6 +11,7 @@
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
     "aws-sdk": "^2.1692.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.716.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
@@ -22,7 +23,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
