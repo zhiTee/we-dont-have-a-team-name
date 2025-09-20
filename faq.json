@@ -1,0 +1,22 @@
+[
+  {
+    "question": "What are your opening hours?",
+    "answer": "We're open Monday-Sunday 8AM-10PM. Drive-thru available 24/7."
+  },
+  {
+    "question": "Do you have vegetarian options?",
+    "answer": "Yes! We offer veggie burgers, salads, and plant-based alternatives."
+  },
+  {
+    "question": "How do I place an online order?",
+    "answer": "Use our mobile app or website. Select items, choose pickup/delivery, and pay online."
+  },
+  {
+    "question": "What's your refund policy?",
+    "answer": "Full refund within 24 hours with receipt. Contact customer service for assistance."
+  },
+  {
+    "question": "Do you offer catering services?",
+    "answer": "Yes, we cater events for 10+ people. Order 48 hours in advance through our catering menu."
+  }
+]
