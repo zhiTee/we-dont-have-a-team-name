@@ -32,12 +32,34 @@ export default function Chat() {
     setMessages((prev) => [...prev, newMessage])
     setInput("")
 
-    // TODO: Call your AI backend here (Bedrock, OpenAI, etc.)
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: "assistant", content: "This is a bot reply 🚀" },
-      ])
+    // Call Bedrock API
+    setTimeout(async () => {
+      try {
+        const res = await fetch("/api/bedrock", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: input }),
+        });
+
+        const data = await res.json();
+
+        const aiMessage: Message = {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: res.ok ? data.response : "Error: " + data.error,
+        }
+
+        setMessages((prev) => [...prev, aiMessage])
+      } catch (err) {
+        const errorMessage: Message = {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: "Failed to fetch response.",
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      }
     }, 800)
   }
 
