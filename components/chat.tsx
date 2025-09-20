@@ -42,6 +42,7 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, newMessage])
     setInput("")
+    setLoading(true)
 
     // Call Bedrock API
     setTimeout(async () => {
@@ -70,6 +71,8 @@ export default function Chat() {
           content: "Failed to fetch response.",
         }
         setMessages((prev) => [...prev, errorMessage])
+      } finally {
+        setLoading(false)
       }
     }, 800)
   }
@@ -94,6 +97,14 @@ export default function Chat() {
             {msg.content}
           </div>
         ))}
+
+        {loading && (
+          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            Thinking...
+          </div>
+        )}
+
         <div ref={scrollRef} />
       </CardContent>
 
