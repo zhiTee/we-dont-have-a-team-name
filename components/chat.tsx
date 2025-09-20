@@ -19,6 +19,8 @@ export default function Chat() {
     { id: 1, role: "assistant", content: "Hello! How can I help you today?" },
   ])
   const [input, setInput] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
+
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
