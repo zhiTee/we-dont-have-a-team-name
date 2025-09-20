@@ -40,7 +40,10 @@ export default function Chat() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ message: input }),
+          body: JSON.stringify({ 
+            message: input,
+            history: messages.slice(1) // Exclude initial greeting
+          }),
         });
 
         const data = await res.json();
@@ -86,17 +89,31 @@ export default function Chat() {
         <div ref={scrollRef} />
       </CardContent>
 
-      <div className="border-t p-3 flex items-center gap-2">
-        <Input
-          type="text"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        />
-        <Button size="icon" onClick={handleSend}>
-          <Send className="h-4 w-4" />
-        </Button>
+      <div className="border-t p-3">
+        <div className="flex flex-wrap gap-1 mb-2">
+          {["Hours", "Menu", "Order Status", "Refund"].map((action) => (
+            <Button
+              key={action}
+              variant="outline"
+              size="sm"
+              onClick={() => setInput(`What are your ${action.toLowerCase()}?`)}
+            >
+              {action}
+            </Button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="text"
+            placeholder="Ask about menu, hours, orders..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <Button size="icon" onClick={handleSend}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   )
