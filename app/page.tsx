@@ -1,13 +1,10 @@
-import Image from "next/image";
-import { Input } from "@/components/ui/input"
+import Chat from "@/components/chat"
 
-export default function Home() {
+export default function Page() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <h1>Hello!</h1>
-
-      <Input type="email" placeholder="Email" />
-        
-    </div>
-  );
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+      <Chat />
+    </main>
+  )
 }
+
