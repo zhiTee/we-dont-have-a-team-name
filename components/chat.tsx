@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Send, Loader2, Mic, Camera } from "lucide-react"
 
+
 type Message = {
   id: number
   role: "user" | "assistant"
@@ -18,7 +19,7 @@ export default function Chat() {
     { id: 1, role: "assistant", content: "Hello! How can I help you today?" },
   ])
   const [input, setInput] = React.useState("")
-  const [loading, setLoading] = React.useState(false)
+
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -39,7 +40,6 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, newMessage])
     setInput("")
-    setLoading(true)
 
     // Call Bedrock API
     setTimeout(async () => {
@@ -68,8 +68,6 @@ export default function Chat() {
           content: "Failed to fetch response.",
         }
         setMessages((prev) => [...prev, errorMessage])
-      } finally {
-        setLoading(false)
       }
     }, 800)
   }
@@ -94,14 +92,6 @@ export default function Chat() {
             {msg.content}
           </div>
         ))}
-
-        {loading && (
-          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            Thinking...
-          </div>
-        )}
-
         <div ref={scrollRef} />
       </CardContent>
 
@@ -142,6 +132,7 @@ export default function Chat() {
             <Mic className="h-5 w-5" />
           </Button>
         </div>
+
 
         <Button size="icon" onClick={handleSend}>
           <Send className="h-4 w-4" />
