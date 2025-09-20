@@ -1,13 +1,27 @@
-import Image from "next/image";
-import { Input } from "@/components/ui/input"
+'use client'
 
-export default function Home() {
+import { useState } from "react";
+import { useRouter } from 'next/navigation';
+
+export default function Chat() {
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
+
+  async function handleSend() {
+    setLoading(true);
+    setLoading(false);
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <h1>Hello!</h1>
+    <div>
+      <h1>Hello world</h1>
 
-      <Input type="email" placeholder="Email" />
-        
+      <button onClick={() => router.push('/ai_sample_1')}>
+      Go to AI Sample 1
+    </button>
     </div>
   );
 }
