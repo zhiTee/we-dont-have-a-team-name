@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Send } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 
 type Message = {
   id: number
@@ -18,6 +18,7 @@ export default function Chat() {
     { id: 1, role: "assistant", content: "Hello! How can I help you today?" },
   ])
   const [input, setInput] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const handleSend = () => {
@@ -31,6 +32,7 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, newMessage])
     setInput("")
+    setLoading(true)
 
     // Call Bedrock API
     setTimeout(async () => {
@@ -59,6 +61,8 @@ export default function Chat() {
           content: "Failed to fetch response.",
         }
         setMessages((prev) => [...prev, errorMessage])
+      } finally {
+        setLoading(false)
       }
     }, 800)
   }
@@ -83,6 +87,14 @@ export default function Chat() {
             {msg.content}
           </div>
         ))}
+
+        {loading && (
+          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            Thinking...
+          </div>
+        )}
+
         <div ref={scrollRef} />
       </CardContent>
 
@@ -93,6 +105,7 @@ export default function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={loading}
         />
         <Button size="icon" onClick={handleSend}>
           <Send className="h-4 w-4" />
