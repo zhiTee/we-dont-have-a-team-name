@@ -1,10 +1,9 @@
-import Chat from "@/components/chat"
 'use client'
+import Chat from "@/components/chat"
 
 import { useState } from "react";
-import { useRouter } from 'next/navigation';
 
-export default function Chat() {
+export default function MainPage() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
