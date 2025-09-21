@@ -58,10 +58,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           response: kbResponse.output.text,
           htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
-          sources: kbResponse.citations.map((citation: any) => ({
-            content: citation.generatedResponsePart?.textResponsePart?.text,
-            source: citation.retrievedReferences?.[0]?.location?.s3Location?.uri
-          })),
           mode: "knowledge-base"
         });
       }
