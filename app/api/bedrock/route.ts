@@ -80,7 +80,7 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     if (process.env.KNOWLEDGE_BASE_ID) {
       try {
         const kbClient = new BedrockAgentRuntimeClient({
-          region: process.env.AWS_REGION || "us-east-1",
+          region: "us-east-1",
         });
 
       const kbCommand = new RetrieveAndGenerateCommand({
@@ -123,13 +123,14 @@ Apa yang ingin anda ketahui lebih lanjut?`,
 
     // Fallback to regular Mistral
     const client = new BedrockRuntimeClient({
-      region: process.env.AWS_REGION || "us-east-1"
+      region: "us-east-1"
     });
 
     const payload = {
-      prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
-      max_tokens: 2000,
-      temperature: 0.5
+      prompt: `<s>[INST] ${message} [/INST]`,
+      max_tokens: 1000,
+      temperature: 0.7,
+      top_p: 0.9
     };
 
     const command = new InvokeModelCommand({

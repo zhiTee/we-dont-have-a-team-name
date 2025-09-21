@@ -12,12 +12,12 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new TranscribeClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: "us-east-1",
     });
 
     // Upload audio to S3
     const s3Client = new S3Client({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: "us-east-1",
     });
 
     const bucketName = process.env.S3_BUCKET_NAME || "transcribe-audio-bucket";
