@@ -28,6 +28,9 @@ export default function Chat() {
   const [input, setInput] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [recording, setRecording] = React.useState(false)
+  const [transcribing, setTranscribing] = React.useState(false)
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
+  const audioChunksRef = React.useRef<Blob[]>([])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -256,13 +259,12 @@ export default function Chat() {
 
           {recording && (
             <span className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center">
-              {/* Outer pulsing ring */}
               <span className="w-3 h-3 rounded-full bg-red-500/70 animate-ping absolute" />
-              {/* Inner solid dot */}
-              <span className="w-3 h-3 rounded-full bg-red-600 relative" />
+              <span className="w-2 h-2 rounded-full bg-red-500 relative" />
             </span>
           )}
         </div>
+
         <Button size="icon" onClick={handleSend} disabled={loading}>
           <Send className="h-4 w-4" />
         </Button>
