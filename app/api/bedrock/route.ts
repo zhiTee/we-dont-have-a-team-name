@@ -82,7 +82,7 @@ Apa yang ingin anda ketahui lebih lanjut?`,
       languageInstructions.en;
 
     // ✅ Use AWS Amplify’s IAM role credentials automatically
-    const region = process.env.REGION || "us-east-1";
+    const region = process.env.BEDROCK_REGION || "us-east-1";
 
     // Try Knowledge Base first (if configured)
     if (process.env.KNOWLEDGE_BASE_ID) {
