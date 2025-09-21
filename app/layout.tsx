@@ -28,6 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ backgroundColor: '#faf5eaff' }}
+        suppressHydrationWarning={true}
       >
         <Navbar />
         {children}
