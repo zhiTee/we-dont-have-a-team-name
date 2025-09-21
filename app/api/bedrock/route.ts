@@ -4,20 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
-  try {
-    const { message, language = 'en' } = await request.json();
-    
-    const languageInstructions = {
-      en: "You must respond only in English. Do not use any other language.",
-      ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
-      zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
-    };
-    
-    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
-
-    // Mock response for demo when AWS credentials are not available
-    const mockResponses = {
-      en: `Hello! I'm DapurGenie, your 24/7 F&B assistant.
+  // Mock response for demo when AWS credentials are not available
+  const mockResponses = {
+    en: `Hello! I'm DapurGenie, your 24/7 F&B assistant.
 
 ## Our Services
 
@@ -36,7 +25,7 @@ export async function POST(request: NextRequest) {
 | Char Kway Teow | RM 10.50 | Eggs, Soy | ✓ |
 
 What would you like to know more about?`,
-      ms: `Halo! Saya DapurGenie, pembantu F&B 24/7 anda.
+    ms: `Halo! Saya DapurGenie, pembantu F&B 24/7 anda.
 
 ## Perkhidmatan Kami
 
@@ -55,7 +44,7 @@ What would you like to know more about?`,
 | Char Kway Teow | RM 10.50 | Telur, Soya | ✓ |
 
 Apa yang ingin anda ketahui lebih lanjut?`,
-      zh: `您好！我是DapurGenie，您的24/7餐饮助手。
+    zh: `您好！我是DapurGenie，您的24/7餐饮助手。
 
 ## 我们的服务
 
@@ -74,13 +63,28 @@ Apa yang ingin anda ketahui lebih lanjut?`,
 | 炒粿条 | RM 10.50 | 鸡蛋, 大豆 | ✓ |
 
 您想了解更多什么信息？`
+  };
+
+  let language = 'en';
+  
+  try {
+    const { message, language: lang = 'en' } = await request.json();
+    language = lang;
+    
+    const languageInstructions = {
+      en: "You must respond only in English. Do not use any other language.",
+      ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
+      zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
     };
+    
+    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
+
 
     // Try Knowledge Base first (only if configured)
     if (process.env.KNOWLEDGE_BASE_ID) {
       try {
         const kbClient = new BedrockAgentRuntimeClient({
-          region: "us-east-1",
+          region: process.env.REGION || "us-east-1",
         });
 
       const kbCommand = new RetrieveAndGenerateCommand({
@@ -91,7 +95,7 @@ Apa yang ingin anda ketahui lebih lanjut?`,
           type: "KNOWLEDGE_BASE",
           knowledgeBaseConfiguration: {
             knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID!,
-            modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/mistral.mistral-7b-instruct-v0:2`,
+            modelArn: `arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0`,
             orchestrationConfiguration: {
               promptTemplate: {
                 textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
@@ -109,7 +113,8 @@ Apa yang ingin anda ketahui lebih lanjut?`,
       const kbResponse = await kbClient.send(kbCommand);
       
       // If Knowledge Base has relevant results, use it
-      if (kbResponse.output?.text && kbResponse.citations && kbResponse.citations.length > 0) {
+      if (kbResponse.output?.text) {
+        console.log(kbResponse.output.text)
         return NextResponse.json({ 
           response: kbResponse.output.text,
           htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
@@ -123,18 +128,24 @@ Apa yang ingin anda ketahui lebih lanjut?`,
 
     // Fallback to regular Mistral
     const client = new BedrockRuntimeClient({
-      region: "us-east-1"
+      region: process.env.REGION || "us-east-1"
     });
 
     const payload = {
-      prompt: `<s>[INST] ${message} [/INST]`,
+      messages: [{
+        role: "user",
+        content: [{
+          type: "text",
+          text: message
+        }]
+      }],
       max_tokens: 5000,
       temperature: 0.7,
       top_p: 0.9
     };
 
     const command = new InvokeModelCommand({
-      modelId: "mistral.mistral-7b-instruct-v0:2",
+      modelId: "amazon.nova-pro-v1:0",
       contentType: "application/json",
       body: JSON.stringify(payload),
     });
@@ -142,7 +153,7 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
-    const aiResponse = responseBody.outputs[0].text;
+    const aiResponse = responseBody.output.message.content[0].text;
     return NextResponse.json({ 
       response: aiResponse,
       htmlResponse: parseAIResponseToHTML(aiResponse),
@@ -150,5 +161,11 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     });
   } catch (error) {
     console.error('Bedrock error:', error);
+    const mockResponse = mockResponses[language as keyof typeof mockResponses] || mockResponses.en;
+    return NextResponse.json({ 
+      response: mockResponse,
+      htmlResponse: parseAIResponseToHTML(mockResponse),
+      mode: "mock-demo"
+    });
   }
 }
