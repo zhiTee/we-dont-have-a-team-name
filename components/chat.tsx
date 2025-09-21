@@ -28,42 +28,68 @@ export default function Chat() {
   const [input, setInput] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [recording, setRecording] = React.useState(false)
-  const [mediaRecorder, setMediaRecorder] = React.useState<MediaRecorder | null>(null)
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-
-  const handlePickMedia = () => fileInputRef.current?.click()
-
+  
+  const handlePickMedia =() => fileInputRef.current?.click()
   const handleRecordVoice = async () => {
     if (!recording) {
+      // Start recording
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        const recorder = new MediaRecorder(stream)
-        const chunks: BlobPart[] = []
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
 
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunks.push(e.data)
-        }
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
 
-        recorder.onstop = () => {
-          const blob = new Blob(chunks, { type: "audio/webm" })
-          console.log("Recorded audio blob:", blob)
-          // TODO: send blob to backend or play it back
-        }
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          await transcribeAudio(audioBlob);
+          stream.getTracks().forEach(track => track.stop());
+        };
 
-        recorder.start()
-        setMediaRecorder(recorder)
-        setRecording(true)
-      } catch (err) {
-        console.error("Microphone access denied", err)
+        mediaRecorder.start();
+        setRecording(true);
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
       }
     } else {
-      mediaRecorder?.stop()
-      setRecording(false)
-      setMediaRecorder(null)
+      // Stop recording
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        setRecording(false);
+      }
     }
-  }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.transcription) {
+        setInput(data.transcription);
+      } else {
+        console.error('Transcription failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -165,6 +191,13 @@ export default function Chat() {
           </div>
         ))}
 
+        {recording && (
+          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-red-100 border border-red-200 inline-flex items-center gap-2">
+            <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-red-700 font-medium">Recording... Tap mic to stop</span>
+          </div>
+        )}
+
         {loading && (
           <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -190,13 +223,20 @@ export default function Chat() {
         <div className="relative flex-1">
           <Input
             type="text"
-            placeholder={languages[language].placeholder}
+            placeholder={transcribing ? "Transcribing..." : languages[language].placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            disabled={loading}
+            disabled={loading || transcribing}
             className="pr-12"
           />
+          
+          {transcribing && (
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Transcribing.......</span>
+            </div>
+          )}
 
           <Button
             type="button"
