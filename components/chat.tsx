@@ -20,16 +20,72 @@ export default function Chat() {
   ])
   const [input, setInput] = React.useState("")
   const [loading, setLoading] = React.useState(false)
-
+  const [recording, setRecording] = React.useState(false)
+  const [transcribing, setTranscribing] = React.useState(false)
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
+  const audioChunksRef = React.useRef<Blob[]>([])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const handlePickMedia =() => fileInputRef.current?.click()
-  const handleRecordVoice = () => {
-  // TODO: wire up MediaRecorder here
-  console.log("Start/stop recording…")
-  }
+  const handleRecordVoice = async () => {
+    if (!recording) {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          await transcribeAudio(audioBlob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        setRecording(true);
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+      }
+    } else {
+      // Stop recording
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        setRecording(false);
+      }
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.transcription) {
+        setInput(data.transcription);
+      } else {
+        console.error('Transcription failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -101,6 +157,13 @@ export default function Chat() {
           </div>
         ))}
 
+        {recording && (
+          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-red-100 border border-red-200 inline-flex items-center gap-2">
+            <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-red-700 font-medium">Recording... Tap mic to stop</span>
+          </div>
+        )}
+
         {loading && (
           <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -127,13 +190,20 @@ export default function Chat() {
         <div className = "relative flex-1">
           <Input
             type="text"
-            placeholder="Type a message..."
+            placeholder={transcribing ? "Transcribing..." : "Type a message..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            disabled={loading}
+            disabled={loading || transcribing}
             className="pr-12"
           />
+          
+          {transcribing && (
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Transcribing.......</span>
+            </div>
+          )}
 
           <Button
             type="button"
@@ -141,21 +211,18 @@ export default function Chat() {
             size="icon"
             aria-label="Record voice message"
             onClick={handleRecordVoice}
-            disabled={loading}
+            disabled={loading || transcribing}
             className="absolute right-1 top-1/2 -translate-y-1/2
                  h-8 w-8"
           >
-            <Mic className="h-5 w-5" />
+            <Mic className={`h-5 w-5 ${recording ? 'text-red-500' : ''}`} />
           </Button>
         </div>
 
 
         <Button size="icon" onClick={handleSend}>
           <Send className="h-4 w-4" />
-        </Button>
-
-        
-        
+        </Button>        
 
       </div>
     </Card>
