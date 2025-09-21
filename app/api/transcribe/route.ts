@@ -12,12 +12,20 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new TranscribeClient({
-      region: "us-east-1",
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
     });
 
     // Upload audio to S3
     const s3Client = new S3Client({
-      region: "us-east-1",
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
     });
 
     const bucketName = process.env.S3_BUCKET_NAME || "transcribe-audio-bucket";
@@ -74,9 +82,5 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Transcribe error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to transcribe audio" },
-      { status: 500 }
-    );
   }
 }

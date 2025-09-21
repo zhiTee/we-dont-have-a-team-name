@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
-  // Mock response for demo when AWS credentials are not available
+  // Mock responses when Bedrock isn’t available
   const mockResponses = {
     en: `Hello! I'm DapurGenie, your 24/7 F&B assistant.
 
@@ -65,80 +65,75 @@ Apa yang ingin anda ketahui lebih lanjut?`,
 您想了解更多什么信息？`
   };
 
-  let language = 'en';
-  
+  let language = "en";
+
   try {
-    const { message, language: lang = 'en' } = await request.json();
+    const { message, language: lang = "en" } = await request.json();
     language = lang;
-    
+
     const languageInstructions = {
       en: "You must respond only in English. Do not use any other language.",
       ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
       zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
     };
-    
-    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
+    const instruction =
+      languageInstructions[language as keyof typeof languageInstructions] ||
+      languageInstructions.en;
 
-    // Try Knowledge Base first (only if configured)
+    // ✅ Use AWS Amplify’s IAM role credentials automatically
+    const region = process.env.REGION || "us-east-1";
+
+    // Try Knowledge Base first (if configured)
     if (process.env.KNOWLEDGE_BASE_ID) {
       try {
-        const kbClient = new BedrockAgentRuntimeClient({
-          region: process.env.REGION || "us-east-1",
-        });
+        const kbClient = new BedrockAgentRuntimeClient({ region });
 
-      const kbCommand = new RetrieveAndGenerateCommand({
-        input: {
-          text: message,
-        },
-        retrieveAndGenerateConfiguration: {
-          type: "KNOWLEDGE_BASE",
-          knowledgeBaseConfiguration: {
-            knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID!,
-            modelArn: `arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0`,
-            orchestrationConfiguration: {
-              promptTemplate: {
-                textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
-              }
-            },
-            generationConfiguration: {
-              promptTemplate: {
-                textPromptTemplate: `${instruction} CRITICAL: Your complete response must be in the specified language. Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$`
+        const kbCommand = new RetrieveAndGenerateCommand({
+          input: { text: message },
+          retrieveAndGenerateConfiguration: {
+            type: "KNOWLEDGE_BASE",
+            knowledgeBaseConfiguration: {
+              knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID!,
+              modelArn: `arn:aws:bedrock:${region}::foundation-model/amazon.nova-pro-v1:0`,
+              orchestrationConfiguration: {
+                promptTemplate: {
+                  textPromptTemplate: `You are a helpful assistant. ${instruction}\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
+                }
+              },
+              generationConfiguration: {
+                promptTemplate: {
+                  textPromptTemplate: `${instruction}\n\nContext: $search_results$\n\nQuestion: $query$`
+                }
               }
             }
-          },
-        },
-      });
-
-      const kbResponse = await kbClient.send(kbCommand);
-      
-      // If Knowledge Base has relevant results, use it
-      if (kbResponse.output?.text) {
-        console.log(kbResponse.output.text)
-        return NextResponse.json({ 
-          response: kbResponse.output.text,
-          htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
-          mode: "knowledge-base"
+          }
         });
-      }
+
+        const kbResponse = await kbClient.send(kbCommand);
+
+        if (kbResponse.output?.text) {
+          return NextResponse.json({
+            response: kbResponse.output.text,
+            htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
+            mode: "knowledge-base"
+          });
+        }
       } catch (kbError) {
-        console.log('Knowledge Base failed, falling back to regular chat:', kbError);
+        console.log("Knowledge Base failed, falling back:", kbError);
       }
     }
 
-    // Fallback to regular Mistral
-    const client = new BedrockRuntimeClient({
-      region: process.env.REGION || "us-east-1"
-    });
+    // ✅ Fallback to direct Bedrock Runtime (chat mode)
+    const client = new BedrockRuntimeClient({ region });
 
     const payload = {
-      messages: [{
-        role: "user",
-        content: [{
-          type: "text",
-          text: message
-        }]
-      }],
+      messages: [
+        {
+          role: "user",
+          content: [{ type: "text", text: message }]
+        }
+      ],
       max_tokens: 5000,
       temperature: 0.7,
       top_p: 0.9
@@ -147,22 +142,23 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     const command = new InvokeModelCommand({
       modelId: "amazon.nova-pro-v1:0",
       contentType: "application/json",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-
     const aiResponse = responseBody.output.message.content[0].text;
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       response: aiResponse,
       htmlResponse: parseAIResponseToHTML(aiResponse),
       mode: "regular-chat"
     });
   } catch (error) {
-    console.error('Bedrock error:', error);
-    const mockResponse = mockResponses[language as keyof typeof mockResponses] || mockResponses.en;
-    return NextResponse.json({ 
+    console.error("Bedrock error:", error);
+    const mockResponse =
+      mockResponses[language as keyof typeof mockResponses] || mockResponses.en;
+    return NextResponse.json({
       response: mockResponse,
       htmlResponse: parseAIResponseToHTML(mockResponse),
       mode: "mock-demo"
