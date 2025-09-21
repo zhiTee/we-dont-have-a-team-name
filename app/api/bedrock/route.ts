@@ -122,9 +122,18 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     }
 
     // Fallback to regular Mistral
-    const client = new BedrockRuntimeClient({
+    const clientConfig: any = {
       region: process.env.AWS_REGION || "us-east-1",
-    });
+    };
+    
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+      clientConfig.credentials = {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      };
+    }
+    
+    const client = new BedrockRuntimeClient(clientConfig);
 
     const payload = {
       prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
