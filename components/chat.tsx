@@ -31,9 +31,11 @@ export default function Chat() {
   const [transcribing, setTranscribing] = React.useState(false)
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
   const audioChunksRef = React.useRef<Blob[]>([])
+  const [userScrolled, setUserScrolled] = React.useState(false)
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const chatContainerRef = React.useRef<HTMLDivElement>(null)
   
   const handlePickMedia =() => fileInputRef.current?.click()
   const handleRecordVoice = async () => {
@@ -120,29 +122,12 @@ export default function Chat() {
 
         const data = await res.json()
 
-        const aiMessageId = Date.now() + 1;
-        setMessages((prev) => [
-        ...prev,
-        { id: aiMessageId, role: "assistant", content: "" },
-        ]);
-
         if (res.ok) {
-          const fullText = data.response;
-          let i = 0;
-
-          const interval = setInterval(() => {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === aiMessageId
-                  ? { ...msg, content: fullText.slice(0, i) }
-                  : msg
-              )
-            );
-            i++;
-            if (i > fullText.length) clearInterval(interval);
-          }, 30); // typing speed
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now() + 1, role: "assistant", content: data.response },
+          ]);
         } else {
-          // Handle server-side error
           setMessages((prev) => [
             ...prev,
             { id: Date.now() + 2, role: "assistant", content: "Error: " + data.error },
@@ -171,12 +156,26 @@ export default function Chat() {
     setMessages([{ id: 1, role: "assistant", content: languages[newLang].greeting }])
   }
 
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+      setUserScrolled(!isAtBottom)
+    }
+  }
+
   React.useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    if (!loading && !userScrolled) {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages, loading, userScrolled])
+
+  React.useEffect(() => {
+    setUserScrolled(false)
+  }, [loading])
 
   return (
-    <Card className="w-full max-w-lg mx-auto h-[600px] flex flex-col shadow-md rounded-2xl">
+    <Card className="w-full h-full flex flex-col shadow-md rounded-2xl">
       {/* Language Selector */}
       <div className="flex justify-end p-3 border-b relative">
         <button
@@ -200,7 +199,11 @@ export default function Chat() {
           </div>
         )}
       </div>
-      <CardContent className="flex-1 overflow-y-auto space-y-3 p-4">
+      <CardContent 
+        ref={chatContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto space-y-3 p-4"
+      >
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -253,7 +256,12 @@ export default function Chat() {
             placeholder={transcribing ? "Transcribing..." : languages[language].placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
             disabled={loading || transcribing}
             className="pr-12"
           />
