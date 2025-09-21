@@ -28,10 +28,10 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ backgroundColor: '#faf5eaff' }}
       >
         <Navbar />
         {children}
-        <FloatingWidget />
       </body>
     </html>
   );

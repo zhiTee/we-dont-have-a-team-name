@@ -11,7 +11,7 @@ export default function Navbar(){
     {href:"/admin", label:"FAQ Analysis"}
   ];
   return (
-    <header className="sticky top-0 z-40 bg-brand-light/70 backdrop-blur supports-[backdrop-filter]:bg-brand-light/70 border-b border-black/5">
+    <header className="sticky top-0 z-40 border-b border-black/5" style={{ backgroundColor: '#faf5eaff' }}>
       <div className="container py-4 flex items-center gap-6">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.svg" alt="logo" className="w-7 h-7"/>

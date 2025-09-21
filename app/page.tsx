@@ -2,7 +2,10 @@ import LanguageToggle from "@/components/LanguageToggle";
 import KpiBar from "@/components/KpiBar";
 import ChatWidget from "@/components/ChatWidget";
 
-export default function Page(){
+export default function Page(
+
+){
+
   return (
     <main>
       <section className="container py-20 grid md:grid-cols-2 gap-12 items-center">
@@ -19,9 +22,7 @@ export default function Page(){
             Built serverless on AWS. Simple sheet-based onboarding.
           </p>
           <div className="mt-6 flex items-center gap-3">
-            <a href="#demo" className="btn-primary">Try Demo</a>
-            <a href="/features" className="btn-ghost">Explore Features</a>
-            <div className="ml-auto"><LanguageToggle/></div>
+            <a href="/features" className="bg-white text-black px-6 py-3 rounded-lg shadow-lg hover:bg-black hover:text-white transition-colors">Explore Features</a>
           </div>
           <div className="mt-10">
             <KpiBar/>
@@ -29,7 +30,7 @@ export default function Page(){
         </div>
         <div id="demo" className="card p-6">
           <h2 className="font-semibold text-xl">Live Demo • Bangi Outlet</h2>
-          <p className="text-black/70 mt-1">Try asking: "masih buka?", "Alergen untuk Curry Laksa?", "budget bawah RM10".</p>
+          <p className="text-black/70 mt-1">Try asking: “masih buka?”, “Alergen untuk Curry Laksa?”, “budget bawah RM10”.</p>
           <div className="mt-4"><ChatWidget/></div>
           <p className="text-xs text-black/50 mt-3">Demo uses your API if configured, else a local mock.</p>
         </div>
