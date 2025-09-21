@@ -125,10 +125,10 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     const client = new BedrockRuntimeClient({
       region: process.env.AWS_REGION || "us-east-1",
       ...(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && {
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        }
+        // credentials: {
+        //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        // }
       })
     });
 
@@ -155,9 +155,5 @@ Apa yang ingin anda ketahui lebih lanjut?`,
     });
   } catch (error) {
     console.error('Bedrock error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to process request" },
-      { status: 500 }
-    );
   }
 }
