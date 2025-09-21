@@ -79,8 +79,8 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#faf5eaff' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b" style={{ backgroundColor: '#faf5eaff' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 color:" style={{ backgroundColor: '#faf5eaff' }}>
+      <div className="shadow-sm border-b" style={{ backgroundColor: '#faf5eaff' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4" style={{ backgroundColor: '#faf5eaff' }}>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Top Questions</h1>
