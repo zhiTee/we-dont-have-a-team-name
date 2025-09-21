@@ -5,7 +5,7 @@ import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, language = 'en', s3Bucket, s3Key } = await request.json();
+    const { message, language = 'en' } = await request.json();
     
     const languageInstructions = {
       en: "You must respond only in English. Do not use any other language.",
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           response: kbResponse.output.text,
           htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
-          sources: kbResponse.citations.map((citation: any) => ({
+          sources: kbResponse.citations.map((citation: { generatedResponsePart?: { textResponsePart?: { text: string } }; retrievedReferences?: Array<{ location?: { s3Location?: { uri: string } } }> }) => ({
             content: citation.generatedResponsePart?.textResponsePart?.text,
             source: citation.retrievedReferences?.[0]?.location?.s3Location?.uri
           })),

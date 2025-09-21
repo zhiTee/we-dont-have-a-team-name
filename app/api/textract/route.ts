@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     // Extract tables and text
     const tables = response.Blocks?.filter(block => block.BlockType === "TABLE") || [];
-    const cells = response.Blocks?.filter(block => block.BlockType === "CELL") || [];
     
     return NextResponse.json({ 
       tables: tables.length,

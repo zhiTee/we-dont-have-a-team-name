@@ -238,6 +238,8 @@ export default function AdminPage() {
 
 declare global {
   interface Window {
-    Chart: any;
+    Chart: {
+      new (ctx: HTMLCanvasElement, config: unknown): unknown;
+    };
   }
 }
