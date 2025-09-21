@@ -128,7 +128,7 @@ Apa yang ingin anda ketahui lebih lanjut?`,
 
     const payload = {
       prompt: `<s>[INST] ${message} [/INST]`,
-      max_tokens: 1000,
+      max_tokens: 5000,
       temperature: 0.7,
       top_p: 0.9
     };
