@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+DapurGenie
 
-## Getting Started
+When the shutters close, the kitchen still answers.
 
-First, run the development server:
+DapurGenie is a 24/7 AI host for F&B startups — answering menus, allergens, halal status, hours, promos, and delivery. It’s built serverless on AWS with simple sheet-based onboarding.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🚀 Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+24/7 AI Support
+Answers customer queries about menu, allergens, halal status, hours, promos, and delivery.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+BM/EN Auto-detect
+Understands local food terms like nasi lemak, tapau, kurang manis.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Allergen & Halal Detection
+Structured tags + disclaimers; AI intelligently invents answers.
 
-## Learn More
+WhatsApp Ready
+Drop-in channel via webhooks with a web widget included.
 
-To learn more about Next.js, take a look at the following resources:
+Simple Setup
+Sheet-based onboarding, no complex integrations needed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+🌐 Live Demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Outlet Example: Bangi Outlet
+Try asking in BM, EN or CN:
 
-## Deploy on Vercel
+“Masih buka?”
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+“Alergen untuk Curry Laksa?”
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+“Budget bawah RM10?”
+
+“Halal ke?”
+
+"还在开吗？"
+
+💡 Demo uses your API if configured, otherwise runs a local mock.
+
+📦 Installation & Setup
+
+Clone the repository:
+
+git clone https://github.com/yourusername/dapurgenie.git
+cd dapurgenie
+
+
+Configure environment variables for AWS serverless deployment.
+
+Prepare your F&B menu and details in a Google Sheet / CSV.
+
+Deploy with your preferred CI/CD pipeline.
+
+🌍 Language Support
+
+Bahasa Melayu (BM)
+
+English (EN)
+
+Chinese (CN)
+
+Auto-detection ensures seamless switching.

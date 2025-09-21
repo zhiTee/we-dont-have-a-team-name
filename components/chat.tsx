@@ -5,7 +5,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+
 import { Send, ChevronDown } from "lucide-react"
+
+import { Send, Loader2, Mic, Camera } from "lucide-react"
 
 type Message = {
   id: number
@@ -26,8 +29,17 @@ export default function Chat() {
     { id: 1, role: "assistant", content: languages.en.greeting },
   ])
   const [input, setInput] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
+
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const handlePickMedia =() => fileInputRef.current?.click()
+  const handleRecordVoice = () => {
+  // TODO: wire up MediaRecorder here
+  console.log("Start/stop recording…")
+  }
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -40,6 +52,7 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, newMessage])
     setInput("")
+    setLoading(true)
 
     // Call Bedrock API
     setTimeout(async () => {
@@ -57,7 +70,7 @@ export default function Chat() {
         const aiMessage: Message = {
           id: Date.now() + 1,
           role: "assistant",
-          content: res.ok ? data.response : "Error: " + data.error,
+          content: res.ok ? (data.htmlResponse || data.response) : "Error: " + data.error,
         }
 
         setMessages((prev) => [...prev, aiMessage])
@@ -68,6 +81,8 @@ export default function Chat() {
           content: "Failed to fetch response.",
         }
         setMessages((prev) => [...prev, errorMessage])
+      } finally {
+        setLoading(false)
       }
     }, 800)
   }
@@ -119,13 +134,37 @@ export default function Chat() {
                 : "bg-muted"
             )}
           >
-            {msg.content}
+            <div 
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: msg.content }} 
+            />
           </div>
         ))}
+
+        {loading && (
+          <div className="px-3 py-2 rounded-lg text-sm max-w-[80%] bg-muted inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            Thinking...
+          </div>
+        )}
+
         <div ref={scrollRef} />
       </CardContent>
 
       <div className="border-t p-3 flex items-center gap-2">
+        <Button
+          type="button"
+          //variant="ghost"
+          size="icon"
+          aria-label="Attach photo or video"
+          onClick={handlePickMedia}
+          disabled={loading}
+          className="bg-muted text-muted-foreground hover:bg-muted/80"
+        >
+          <Camera className="h-5 w-5" />
+        </Button>
+
+        <div className = "relative flex-1">
           <Input
           type="text"
           placeholder={languages[language].placeholder}
@@ -133,9 +172,36 @@ export default function Chat() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
+
+            type="text"
+            placeholder="Type a message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            disabled={loading}
+            className="pr-12"
+          />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Record voice message"
+            onClick={handleRecordVoice}
+            disabled={loading}
+            className="absolute right-1 top-1/2 -translate-y-1/2
+                 h-8 w-8"
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+        </div>
         <Button size="icon" onClick={handleSend}>
           <Send className="h-4 w-4" />
         </Button>
+
+        
+        
+
       </div>
     </Card>
   )
