@@ -5,8 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-
-import { Send, ChevronDown, Loader2, Mic, Camera } from "lucide-react"
+import { Send, Loader2, Mic, Camera, Square, ChevronDown } from "lucide-react"
 
 type Message = {
   id: number
@@ -29,13 +28,10 @@ export default function Chat() {
   const [input, setInput] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [recording, setRecording] = React.useState(false)
-  const [transcribing, setTranscribing] = React.useState(false)
-  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
-  const audioChunksRef = React.useRef<Blob[]>([])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
-
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  
   const handlePickMedia =() => fileInputRef.current?.click()
   const handleRecordVoice = async () => {
     if (!recording) {
@@ -105,10 +101,10 @@ export default function Chat() {
     }
 
     setMessages((prev) => [...prev, newMessage])
+    const currentInput = input
     setInput("")
     setLoading(true)
 
-    // Call Bedrock API
     setTimeout(async () => {
       try {
         const res = await fetch("/api/bedrock", {
@@ -116,10 +112,10 @@ export default function Chat() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ message: input, language }),
+          body: JSON.stringify({ message: currentInput, language }),
         });
 
-        const data = await res.json();
+        const data = await res.json()
 
         const aiMessage: Message = {
           id: Date.now() + 1,
@@ -188,9 +184,9 @@ export default function Chat() {
                 : "bg-muted"
             )}
           >
-            <div 
+            <div
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: msg.content }} 
+              dangerouslySetInnerHTML={{ __html: msg.content }}
             />
           </div>
         ))}
@@ -215,7 +211,6 @@ export default function Chat() {
       <div className="border-t p-3 flex items-center gap-2">
         <Button
           type="button"
-          //variant="ghost"
           size="icon"
           aria-label="Attach photo or video"
           onClick={handlePickMedia}
@@ -249,12 +244,24 @@ export default function Chat() {
             size="icon"
             aria-label="Record voice message"
             onClick={handleRecordVoice}
-            disabled={loading || transcribing}
-            className="absolute right-1 top-1/2 -translate-y-1/2
-                 h-8 w-8"
+            disabled={loading}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
           >
-            <Mic className={`h-5 w-5 ${recording ? 'text-red-500' : ''}`} />
+            {recording ? (
+              <Square className="h-5 w-5 text-red-500" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
           </Button>
+
+          {recording && (
+            <span className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center">
+              {/* Outer pulsing ring */}
+              <span className="w-3 h-3 rounded-full bg-red-500/70 animate-ping absolute" />
+              {/* Inner solid dot */}
+              <span className="w-3 h-3 rounded-full bg-red-600 relative" />
+            </span>
+          )}
         </div>
         <Button size="icon" onClick={handleSend} disabled={loading}>
           <Send className="h-4 w-4" />

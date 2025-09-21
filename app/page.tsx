@@ -22,7 +22,7 @@ export default function MainPage() {
                    md:top-6 md:right-6 
                    max-md:bottom-6 max-md:right-6"
       >
-        Admin
+        Top FAQ
       </button>
     </div>
   );
