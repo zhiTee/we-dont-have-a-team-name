@@ -117,24 +117,48 @@ export default function Chat() {
 
         const data = await res.json()
 
-        const aiMessage: Message = {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: res.ok ? (data.htmlResponse || data.response) : "Error: " + data.error,
-        }
+        const aiMessageId = Date.now() + 1;
+        setMessages((prev) => [
+        ...prev,
+        { id: aiMessageId, role: "assistant", content: "" },
+        ]);
 
-        setMessages((prev) => [...prev, aiMessage])
-      } catch (err) {
-        const errorMessage: Message = {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: "Failed to fetch response.",
+        if (res.ok) {
+          const fullText = data.response;
+          let i = 0;
+
+          const interval = setInterval(() => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === aiMessageId
+                  ? { ...msg, content: fullText.slice(0, i) }
+                  : msg
+              )
+            );
+            i++;
+            if (i > fullText.length) clearInterval(interval);
+          }, 30); // typing speed
+        } else {
+          // Handle server-side error
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now() + 2, role: "assistant", content: "Error: " + data.error },
+          ]);
         }
-        setMessages((prev) => [...prev, errorMessage])
+      } catch (err) {
+        // Handle network or unexpected error
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 3,
+            role: "assistant",
+            content: "Failed to fetch response.",
+          },
+        ]);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }, 800)
+    }, 800);
   }
 
   const handleLanguageChange = (newLang: keyof typeof languages) => {
