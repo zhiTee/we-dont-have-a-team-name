@@ -1,20 +1,32 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { BedrockAgentRuntimeClient, RetrieveAndGenerateCommand } from "@aws-sdk/client-bedrock-agent-runtime";
 import { NextRequest, NextResponse } from "next/server";
+import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { message, language = 'en', s3Bucket, s3Key } = await request.json();
+    
+    const languageInstructions = {
+      en: "You must respond only in English. Do not use any other language.",
+      ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
+      zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
+    };
+    
+    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
-    // Try Knowledge Base first
-    try {
-      const kbClient = new BedrockAgentRuntimeClient({
-        region: process.env.AWS_REGION || "us-east-1",
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        },
-      });
+
+
+    // Try Knowledge Base first (only if configured)
+    if (process.env.KNOWLEDGE_BASE_ID) {
+      try {
+        const kbClient = new BedrockAgentRuntimeClient({
+          region: process.env.AWS_REGION || "us-east-1",
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+        });
 
       const kbCommand = new RetrieveAndGenerateCommand({
         input: {
@@ -27,12 +39,12 @@ export async function POST(request: NextRequest) {
             modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/mistral.mistral-7b-instruct-v0:2`,
             orchestrationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "You are a helpful assistant. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:"
+                textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
               }
             },
             generationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "<s>[INST] Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$ [/INST]"
+                textPromptTemplate: `${instruction} CRITICAL: Your complete response must be in the specified language. Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$`
               }
             }
           },
@@ -45,6 +57,7 @@ export async function POST(request: NextRequest) {
       if (kbResponse.output?.text && kbResponse.citations && kbResponse.citations.length > 0) {
         return NextResponse.json({ 
           response: kbResponse.output.text,
+          htmlResponse: parseAIResponseToHTML(kbResponse.output.text),
           sources: kbResponse.citations.map((citation: any) => ({
             content: citation.generatedResponsePart?.textResponsePart?.text,
             source: citation.retrievedReferences?.[0]?.location?.s3Location?.uri
@@ -52,8 +65,9 @@ export async function POST(request: NextRequest) {
           mode: "knowledge-base"
         });
       }
-    } catch (kbError) {
-      console.log('Knowledge Base failed, falling back to regular chat:', kbError);
+      } catch (kbError) {
+        console.log('Knowledge Base failed, falling back to regular chat:', kbError);
+      }
     }
 
     // Fallback to regular Mistral
@@ -66,9 +80,9 @@ export async function POST(request: NextRequest) {
     });
 
     const payload = {
-      prompt: `<s>[INST] ${message} [/INST]`,
-      max_tokens: 1000,
-      temperature: 0.7
+      prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
+      max_tokens: 2000,
+      temperature: 0.5
     };
 
     const command = new InvokeModelCommand({
@@ -80,8 +94,10 @@ export async function POST(request: NextRequest) {
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
+    const aiResponse = responseBody.outputs[0].text;
     return NextResponse.json({ 
-      response: responseBody.outputs[0].text,
+      response: aiResponse,
+      htmlResponse: parseAIResponseToHTML(aiResponse),
       mode: "regular-chat"
     });
   } catch (error) {
