@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
-import { Send, ChevronDown } from "lucide-react"
-
-import { Send, Loader2, Mic, Camera } from "lucide-react"
+import { Send, ChevronDown, Loader2, Mic, Camera } from "lucide-react"
 
 type Message = {
   id: number
@@ -164,17 +162,10 @@ export default function Chat() {
           <Camera className="h-5 w-5" />
         </Button>
 
-        <div className = "relative flex-1">
+        <div className="relative flex-1">
           <Input
-          type="text"
-          placeholder={languages[language].placeholder}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        />
-
             type="text"
-            placeholder="Type a message..."
+            placeholder={languages[language].placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -195,13 +186,9 @@ export default function Chat() {
             <Mic className="h-5 w-5" />
           </Button>
         </div>
-        <Button size="icon" onClick={handleSend}>
+        <Button size="icon" onClick={handleSend} disabled={loading}>
           <Send className="h-4 w-4" />
         </Button>
-
-        
-        
-
       </div>
     </Card>
   )
