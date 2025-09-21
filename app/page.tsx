@@ -1,6 +1,6 @@
 import LanguageToggle from "@/components/LanguageToggle";
 import KpiBar from "@/components/KpiBar";
-import ChatMain from "@/components/chat-main";
+import Chat from "@/components/chat";
 
 export default function Page() {
   return (
@@ -28,7 +28,7 @@ export default function Page() {
         <div id="demo" className="card p-6">
           <h2 className="font-semibold text-xl">Live Demo • Bangi Outlet</h2>
           <p className="text-black/70 mt-1">Try asking: “masih buka?”, “Alergen untuk Curry Laksa?”, “budget bawah RM10”.</p>
-          <div className="mt-4"><ChatMain/></div>
+          <div className="mt-4"><Chat/></div>
           <p className="text-xs text-black/50 mt-3">Demo uses your API if configured, else a local mock.</p>
         </div>
       </section>
