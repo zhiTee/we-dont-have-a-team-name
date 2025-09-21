@@ -17,15 +17,16 @@ export async function POST(request: NextRequest) {
 
 
 
-    // Try Knowledge Base first
-    try {
-      const kbClient = new BedrockAgentRuntimeClient({
-        region: process.env.AWS_REGION || "us-east-1",
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        },
-      });
+    // Try Knowledge Base first (only if configured)
+    if (process.env.KNOWLEDGE_BASE_ID) {
+      try {
+        const kbClient = new BedrockAgentRuntimeClient({
+          region: process.env.AWS_REGION || "us-east-1",
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+        });
 
       const kbCommand = new RetrieveAndGenerateCommand({
         input: {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
           type: "KNOWLEDGE_BASE",
           knowledgeBaseConfiguration: {
             knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID!,
-            modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/amazon.nova-pro-v1:0`,
+            modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/mistral.mistral-7b-instruct-v0:2`,
             orchestrationConfiguration: {
               promptTemplate: {
                 textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
@@ -64,8 +65,9 @@ export async function POST(request: NextRequest) {
           mode: "knowledge-base"
         });
       }
-    } catch (kbError) {
-      console.log('Knowledge Base failed, falling back to regular chat:', kbError);
+      } catch (kbError) {
+        console.log('Knowledge Base failed, falling back to regular chat:', kbError);
+      }
     }
 
     // Fallback to regular Mistral
@@ -78,16 +80,13 @@ export async function POST(request: NextRequest) {
     });
 
     const payload = {
-      messages: [{
-        role: "user",
-        content: `${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message}`
-      }],
-      max_tokens: 1000,
+      prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
+      max_tokens: 2000,
       temperature: 0.5
     };
 
     const command = new InvokeModelCommand({
-      modelId: "amazon.nova-pro-v1:0",
+      modelId: "mistral.mistral-7b-instruct-v0:2",
       contentType: "application/json",
       body: JSON.stringify(payload),
     });
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
-    const aiResponse = responseBody.output.message.content[0].text;
+    const aiResponse = responseBody.outputs[0].text;
     return NextResponse.json({ 
       response: aiResponse,
       htmlResponse: parseAIResponseToHTML(aiResponse),
