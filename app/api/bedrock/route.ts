@@ -6,6 +6,15 @@ import { parseAIResponseToHTML } from "@/lib/html-parser";
 
 export async function POST(request: NextRequest) {
   try {
+    const { message, language = 'en' } = await request.json();
+    
+    const languageInstructions = {
+      en: "You must respond only in English. Do not use any other language.",
+      ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
+      zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
+    };
+    
+    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
     const { message, s3Bucket, s3Key } = await request.json();
 
     // If S3 document provided, use Textract first
@@ -89,11 +98,13 @@ export async function POST(request: NextRequest) {
             modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/amazon.nova-pro-v1:0`,
             orchestrationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "You are a helpful assistant. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:"
+                textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
               }
             },
             generationConfiguration: {
               promptTemplate: {
+                textPromptTemplate: `<s>[INST] ${instruction} CRITICAL: Your complete response must be in the specified language. Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$ [/INST]`
+
                 textPromptTemplate: "You are an expert at analyzing documents including tabular, structured and descriptive data. Based on the following context, answer the question. If the context contains tabular or descriptive data, state or describe them in your response without showing the structure.\n\nContext: $search_results$\n\nQuestion: $query$"
               }
             }
@@ -129,12 +140,15 @@ export async function POST(request: NextRequest) {
     });
 
     const payload = {
+      prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
+
       messages: [{
         role: "user",
         content: message
       }],
+
       max_tokens: 1000,
-      temperature: 0.7
+      temperature: 0.5
     };
 
     const command = new InvokeModelCommand({
