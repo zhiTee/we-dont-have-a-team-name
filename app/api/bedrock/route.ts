@@ -4,7 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { message, language = 'en' } = await request.json();
+    
+    const languageInstructions = {
+      en: "You must respond only in English. Do not use any other language.",
+      ms: "Anda mesti menjawab dalam Bahasa Malaysia sahaja. Jangan gunakan bahasa lain.",
+      zh: "你必须只用中文回答。不要使用任何其他语言。请用简体中文或繁体中文回答。"
+    };
+    
+    const instruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
     // Try Knowledge Base first
     try {
@@ -27,12 +35,12 @@ export async function POST(request: NextRequest) {
             modelArn: `arn:aws:bedrock:${process.env.AWS_REGION}::foundation-model/mistral.mistral-7b-instruct-v0:2`,
             orchestrationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "You are a helpful assistant. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:"
+                textPromptTemplate: `You are a helpful assistant. ${instruction} IMPORTANT: Your entire response must be in the specified language only. Use the following context to answer the question.\n\nConversation History: $conversation_history$\n\nContext: $search_results$\n\nQuestion: $query$\n\n$output_format_instructions$\n\nAnswer:`
               }
             },
             generationConfiguration: {
               promptTemplate: {
-                textPromptTemplate: "<s>[INST] Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$ [/INST]"
+                textPromptTemplate: `<s>[INST] ${instruction} CRITICAL: Your complete response must be in the specified language. Based on the following context, answer the question.\n\nContext: $search_results$\n\nQuestion: $query$ [/INST]`
               }
             }
           },
@@ -66,9 +74,9 @@ export async function POST(request: NextRequest) {
     });
 
     const payload = {
-      prompt: `<s>[INST] ${message} [/INST]`,
+      prompt: `<s>[INST] ${instruction} CRITICAL: Your entire response must be in the specified language only. Question: ${message} [/INST]`,
       max_tokens: 1000,
-      temperature: 0.7
+      temperature: 0.5
     };
 
     const command = new InvokeModelCommand({
