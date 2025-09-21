@@ -1,11 +1,8 @@
 import LanguageToggle from "@/components/LanguageToggle";
 import KpiBar from "@/components/KpiBar";
-import ChatWidget from "@/components/ChatWidget";
+import ChatMain from "@/components/chat-main";
 
-export default function Page(
-
-){
-
+export default function Page() {
   return (
     <main>
       <section className="container py-20 grid md:grid-cols-2 gap-12 items-center">
@@ -31,7 +28,7 @@ export default function Page(
         <div id="demo" className="card p-6">
           <h2 className="font-semibold text-xl">Live Demo • Bangi Outlet</h2>
           <p className="text-black/70 mt-1">Try asking: “masih buka?”, “Alergen untuk Curry Laksa?”, “budget bawah RM10”.</p>
-          <div className="mt-4"><ChatWidget/></div>
+          <div className="mt-4"><ChatMain/></div>
           <p className="text-xs text-black/50 mt-3">Demo uses your API if configured, else a local mock.</p>
         </div>
       </section>
